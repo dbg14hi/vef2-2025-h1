@@ -3,10 +3,10 @@ name: Lint and Test
 on:
   push:
     branches:
-      - main  # Adjust to the branch you're working with
+      - master  # Adjust to the branch you're working with
   pull_request:
     branches:
-      - main  # Runs on pull requests targeting the main branch
+      - master  # Runs on pull requests targeting the main branch
 
 jobs:
   lint-and-test:
