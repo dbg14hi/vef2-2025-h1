@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18.18.0'  # Ensure Node.js version is 18.18.0 or higher
+          node-version: '20.18' 
 
       # Set up the DATABASE_URL secret as an environment variable
       - name: Set environment variables
