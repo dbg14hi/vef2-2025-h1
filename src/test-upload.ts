@@ -5,11 +5,10 @@ require('dotenv').config();
 const timestamp = Math.round((new Date).getTime()/1000);
 
 // Show the timestamp
-console.log('Timestamp:',timestamp);
+console.info('Timestamp:',timestamp);
 
 const optionsForSignature = {
     timestamp,
-    eager: 'w_400,h_300,c_pad|w_260,h_200,c_crop',
     public_id: 'sample_image',
   };
 
@@ -20,7 +19,7 @@ const signature = cloudinary.utils.api_sign_request(
 );
   
 // Show the signature
-console.log('Signature:', signature);
+console.info('Signature:', signature);
 
 // ====================================================================================================
 
@@ -33,4 +32,4 @@ const file = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/VAN_CAT.png';
 const curl_command = `curl -d "file=${file}&api_key=${process.env.API_KEY}&eager=w_400,h_300,c_pad|w_260,h_200,c_crop&public_id=sample_image&timestamp=${timestamp}&signature=${signature}" -X POST http://api.cloudinary.com/v1_1/${process.env.CLOUD_NAME}/image/upload`;
 
 // Show the curl command
-console.log('curl command:', curl_command);
+console.info('curl command:', curl_command);

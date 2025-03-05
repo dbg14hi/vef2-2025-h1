@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.info('🌱 Seeding database...');
 
   // Hash password for default admin user
   const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -31,9 +31,6 @@ async function main() {
     ],
     skipDuplicates: true, // Avoid duplicate entries
   });
-
-  console.log(`✅ Seeded: Admin User (${admin.email})`);
-  console.log(`✅ Seeded: ${exercises.count} Exercises`);
 }
 
 main()

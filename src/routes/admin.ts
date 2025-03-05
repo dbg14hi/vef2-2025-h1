@@ -3,40 +3,30 @@ import { prisma } from '../utils/prisma';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/admin';
 import { exerciseSchema, workoutSchema } from '../schema/schemas';
-import { cloudinary } from "../utils/cloudinary";
-import {encodeBase64} from "hono/utils/encode";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { nanoid } from "nanoid";
+
+const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME!;
+const AWS_REGION = process.env.AWS_REGION!;
+const IMGIX_BASE_URL = process.env.IMGIX_BASE_URL!;
+
+// Initialize AWS S3 Client
+const s3 = new S3Client({
+  region: AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 export const adminRoutes = new Hono();
 
-adminRoutes.post("/upload", async (c) => {
-    console.log("✅ Received request at /upload");
-
-    const body = await c.req.parseBody();
-
-    if (!body || !body["image"]) {
-      console.log("❌ No image found in request");
-      return c.json({ error: "No image provided" }, 400);
-    }
-
-    console.log("📸 Image received");
-
-    const image = body["image"] as File;
-    const byteArrayBuffer = await image.arrayBuffer();
-    const base64 = encodeBase64(byteArrayBuffer);
-
-    console.log("📤 Uploading to Cloudinary...");
-    
-    const results = await cloudinary.uploader.upload(`data:image/png;base64,${base64}`);
-    console.log(results);
-    return c.json(results);
-});
-
-// ✅ Upload Image for an Exercise (Hono-Compatible)
+// Upload Image for an Exercise (Using S3 & Imgix)
 adminRoutes.post('/exercises/:id/image', authMiddleware, adminMiddleware, async (c) => {
   try {
     const exerciseId = c.req.param('id');
 
-    // ✅ Check if exercise exists
+    // Check if exercise exists
     const exercise = await prisma.exercise.findUnique({
       where: { id: exerciseId },
     });
@@ -45,7 +35,7 @@ adminRoutes.post('/exercises/:id/image', authMiddleware, adminMiddleware, async 
       return c.json({ error: 'Exercise not found' }, 404);
     }
 
-    // ✅ Parse body using Hono's built-in `parseBody()`
+    // Parse body using Hono's built-in `parseBody()`
     const body = await c.req.parseBody();
     const image = body["image"] as File;
 
@@ -53,33 +43,39 @@ adminRoutes.post('/exercises/:id/image', authMiddleware, adminMiddleware, async 
       return c.json({ error: 'No image file provided' }, 400);
     }
 
-    // ✅ Convert file to Base64
+    // Generate a unique filename for S3
+    const fileExtension = image.name.split(".").pop();
+    const fileName = `exercises/${exerciseId}-${nanoid()}.${fileExtension}`;
+
+    // Convert file to Buffer for S3 upload
     const byteArrayBuffer = await image.arrayBuffer();
-    const base64 = encodeBase64(byteArrayBuffer);
+    const buffer = Buffer.from(byteArrayBuffer);
 
-    // ✅ Upload to Cloudinary (Use global config)
-    const cloudinaryResponse = await cloudinary.uploader.upload(`data:image/png;base64,${base64}`, {
-      folder: "exercises", // Optional: Organize images in a folder
-      resource_type: "image", // Ensure the resource type is set
-    });
+    // Upload to S3
+    const uploadParams = {
+      Bucket: AWS_BUCKET_NAME,
+      Key: fileName,
+      Body: buffer,
+      ContentType: image.type,
+    };
 
-    if (!cloudinaryResponse.secure_url) {
-      return c.json({ error: 'Failed to upload image' }, 500);
-    }
+    await s3.send(new PutObjectCommand(uploadParams));
 
-    // ✅ Store image URL in database
+    // Generate Imgix URL (Optimized Image)
+    const imgixUrl = `${IMGIX_BASE_URL}/${fileName}`;
+
+    // Store Imgix URL in database
     const updatedExercise = await prisma.exercise.update({
       where: { id: exerciseId },
-      data: { imageUrl: cloudinaryResponse.secure_url },
+      data: { imageUrl: imgixUrl },
     });
 
     return c.json({ message: 'Image uploaded successfully', updatedExercise });
   } catch (error) {
-    console.error("❌ Error uploading image:", error);
+    console.error("Error uploading image:", error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
-
 
 // Get all exercises (with pagination)
 adminRoutes.get('/exercises', authMiddleware, adminMiddleware, async (c) => {
@@ -111,7 +107,6 @@ adminRoutes.post('/exercises', authMiddleware, adminMiddleware, async (c) => {
 
   return c.json(newExercise, 201);
 });
-
 
 // Update exercise
 adminRoutes.put('/exercises/:id', authMiddleware, adminMiddleware, async (c) => {
