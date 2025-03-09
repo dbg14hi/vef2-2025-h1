@@ -1,4 +1,4 @@
-import { app } from '../server';
+import { app } from '../server.js';
 import { expect, test } from 'vitest';
 
 const fetchJSON = async (url: string, options: RequestInit = {}) => {

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { prisma } from '../utils/prisma';
+import { prisma } from '../utils/prisma.js';
 
 export const exerciseRoutes = new Hono();
 

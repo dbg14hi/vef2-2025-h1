@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { fetchJSON } from '../utils/fetchJSON';
+import { fetchJSON } from '../utils/fetchJSON.js';
 
 // Test: Get User Profile
 test('Get user profile', async () => {

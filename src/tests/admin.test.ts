@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { fetchJSON } from '../utils/fetchJSON';
+import { fetchJSON } from '../utils/fetchJSON.js';
 
 let adminToken: string;
 

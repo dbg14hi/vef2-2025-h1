@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { prisma } from '../utils/prisma';
-import { authMiddleware } from '../middleware/auth';
+import { prisma } from '../utils/prisma.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 export const workoutRoutes = new Hono<{ Variables: { userId: string } }>();
 

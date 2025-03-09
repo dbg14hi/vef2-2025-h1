@@ -1,6 +1,6 @@
 import { MiddlewareHandler } from 'hono';
 import jwt from 'jsonwebtoken';
-import { prisma} from '../utils/prisma';
+import { prisma} from '../utils/prisma.js';
 
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey';
 

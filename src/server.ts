@@ -3,11 +3,11 @@ import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { serve } from "@hono/node-server";
 import { PrismaClient } from '@prisma/client';
-import { authRoutes } from './routes/auth';
-import { userRoutes } from './routes/users';
-import { workoutRoutes } from './routes/workouts';
-import { exerciseRoutes } from './routes/exercises';
-import { adminRoutes } from './routes/admin';
+import { authRoutes } from './routes/auth.js';
+import { userRoutes } from './routes/users.js';
+import { workoutRoutes } from './routes/workouts.js';
+import { exerciseRoutes } from './routes/exercises.js';
+import { adminRoutes } from './routes/admin.js';
 
 export const app = new Hono();
 const prisma = new PrismaClient();
