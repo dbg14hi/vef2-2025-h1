@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { prisma } from '../utils/prisma';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/admin';
-import { exerciseSchema, workoutSchema } from '../schema/schemas';
+import { workoutSchema } from '../schema/schemas';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { nanoid } from "nanoid";
 
