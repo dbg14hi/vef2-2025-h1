@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "outDir": "dist",   // ✅ Compiled files go to 'dist'
-    "rootDir": "src",   // ✅ Source files are in 'src'
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "ESNext",   
+    "moduleResolution": "Bundler",
     "target": "ESNext",
     "strict": true,
     "esModuleInterop": true,
