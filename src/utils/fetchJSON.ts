@@ -1,4 +1,4 @@
-import { app } from '../server'; // Ensure correct import path
+import { app } from '../server.js'; // Ensure correct import path
 
 export const fetchJSON = async (url: string, options: RequestInit = {}) => {
   const response = await app.request(url, {
