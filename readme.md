@@ -23,6 +23,8 @@ Run test:
 yarn test
 ```
 
+Gæti verið meira tests :)
+
 Run lint
 ```bash
 yarn lint
