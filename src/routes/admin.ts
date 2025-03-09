@@ -21,6 +21,7 @@ const s3 = new S3Client({
 
 export const adminRoutes = new Hono();
 
+// Exercises routes
 // Upload Image for an Exercise (Using S3 & Imgix)
 adminRoutes.post('/exercises/:id/image', authMiddleware, adminMiddleware, async (c) => {
   try {
@@ -90,18 +91,36 @@ adminRoutes.get('/exercises', authMiddleware, adminMiddleware, async (c) => {
 
 // Create new exercise
 adminRoutes.post('/exercises', authMiddleware, adminMiddleware, async (c) => {
-  const body = await c.req.json();
+  const { name, description, categoryName } = await c.req.json();
 
-  // Validate input (ensure name, category, and description exist)
-  if (!body.name || !body.category) {
-    return c.json({ error: 'Name and category are required' }, 400);
+  if (!categoryName) {
+    return c.json({ error: "categoryName is required" }, 400);
   }
 
+  // 🔍 Find categoryId based on categoryName
+  const category = await prisma.category.findUnique({
+    where: { name: categoryName },
+  });
+
+  if (!category) {
+    return c.json({ error: `Category '${categoryName}' does not exist.` }, 400);
+  }
+
+  // 🔍 Check if exercise with the same name already exists
+  const existingExercise = await prisma.exercise.findUnique({
+    where: { name },
+  });
+
+  if (existingExercise) {
+    return c.json({ error: `Exercise with name '${name}' already exists.` }, 400);
+  }
+
+  // ✅ Create the new exercise using `category.id`
   const newExercise = await prisma.exercise.create({
     data: {
-      name: body.name,
-      category: body.category,
-      description: body.description || null, // Optional description
+      name,
+      description,
+      categoryId: category.id, // ✅ Uses categoryId retrieved from categoryName
     },
   });
 
@@ -110,39 +129,114 @@ adminRoutes.post('/exercises', authMiddleware, adminMiddleware, async (c) => {
 
 // Update exercise
 adminRoutes.put('/exercises/:id', authMiddleware, adminMiddleware, async (c) => {
-    const id = c.req.param('id');
-    const body = await c.req.json();
-    const parsed = exerciseSchema.safeParse(body);
-  
-    if (!parsed.success) {
-      return c.json({ error: parsed.error.format() }, 400);
-    }
-  
-    try {
-      const updatedExercise = await prisma.exercise.update({
-        where: { id },
-        data: parsed.data,
-      });
-  
-      return c.json(updatedExercise);
-    } catch (error) {
-      return c.json({ error: 'Exercise not found or invalid ID' }, 400);
-    }
+  const id = c.req.param('id');
+  const { name, description, categoryName } = await c.req.json();
+
+  if (!categoryName) {
+    return c.json({ error: "categoryName is required" }, 400);
+  }
+
+  // 🔍 Get categoryId from categoryName
+  const category = await prisma.category.findUnique({
+    where: { name: categoryName },
   });
 
-// Delete exercise
-adminRoutes.delete('/exercises/:id', authMiddleware, adminMiddleware, async (c) => {
-    const id = c.req.param('id');
-  
-    try {
-      const deleted = await prisma.exercise.delete({
-        where: { id },
-      });
-      return c.json({ message: 'Exercise deleted', deleted });
-    } catch (error) {
-      return c.json({ error: 'Exercise not found or invalid ID' }, 400);
-    }
+  if (!category) {
+    return c.json({ error: `Category '${categoryName}' does not exist.` }, 400);
+  }
+
+  // Update exercise with the new categoryId
+  const updatedExercise = await prisma.exercise.update({
+    where: { id },
+    data: {
+      name,
+      description,
+      categoryId: category.id, 
+    },
   });
+
+  return c.json(updatedExercise);
+});
+
+// Delete exercise
+adminRoutes.delete('/exercises', authMiddleware, adminMiddleware, async (c) => {
+  const { id, name } = await c.req.json(); // Read id or name from request body
+
+  try {
+    if (id) {
+      // ✅ Delete by ID
+      await prisma.workoutExercise.deleteMany({
+        where: { exerciseId: id },
+      });
+
+      const deletedExercise = await prisma.exercise.delete({ where: { id } });
+
+      return c.json({ message: 'Exercise deleted', deletedExercise });
+    } else if (name) {
+      // ✅ Delete by name (case-insensitive match)
+      const deletedExercises = await prisma.exercise.deleteMany({
+        where: { name: { equals: name, mode: 'insensitive' } },
+      });
+
+      if (deletedExercises.count === 0) {
+        return c.json({ error: `No exercise found with name '${name}'` }, 404);
+      }
+
+      return c.json({ message: 'Exercises deleted', deletedCount: deletedExercises.count });
+    }
+
+    return c.json({ error: 'Provide either an id or name to delete' }, 400);
+  } catch (error) {
+    console.error('Error deleting exercise:', error);
+    return c.json({ error: 'Exercise not found or cannot be deleted' }, 400);
+  }
+});
+
+
+// Progress routes
+// Get all progress logs 
+adminRoutes.get('/progress', authMiddleware, adminMiddleware, async (c) => {
+  const progressLogs = await prisma.progressLog.findMany({
+    include: {
+      user: { select: { email: true } }, 
+      exercise: { select: { name: true } },
+      workout: { select: { date: true } },
+    },
+    orderBy: { date: 'desc' },
+  });
+
+  return c.json(progressLogs);
+});
+
+// Delete progress log
+adminRoutes.delete('/progress/:id', authMiddleware, adminMiddleware, async (c) => {
+  const id = c.req.param('id');
+
+  try {
+    await prisma.progressLog.delete({ where: { id } });
+    return c.json({ message: 'Progress log deleted' });
+  } catch (error) {
+    return c.json({ error: 'Progress log not found' }, 400);
+  }
+});
+
+// Log progress for a user (admin only)
+adminRoutes.post('/progress', authMiddleware, adminMiddleware, async (c) => {
+  const { userId, exerciseId, workoutId, sets, reps, weight } = await c.req.json();
+
+  const progressLog = await prisma.progressLog.create({
+    data: {
+      userId,
+      exerciseId,
+      workoutId,
+      sets,
+      reps,
+      weight,
+    },
+  });
+
+  return c.json({ message: 'Progress logged!', progressLog });
+});
 
 // Get all workouts (with pagination)
 adminRoutes.get('/workouts', authMiddleware, adminMiddleware, async (c) => {
@@ -159,8 +253,14 @@ adminRoutes.get('/workouts', authMiddleware, adminMiddleware, async (c) => {
 // Create new workout
 adminRoutes.post('/workouts', authMiddleware, adminMiddleware, async (c) => {
     const body = await c.req.json();
+    
+    // Ensure userId is provided
+    if (!body.userId) {
+      return c.json({ error: "userId is required for creating a workout" }, 400);
+    }
+
     const parsed = workoutSchema.safeParse(body);
-  
+
     if (!parsed.success) {
       return c.json({ error: parsed.error.format() }, 400);
     }
@@ -191,7 +291,7 @@ adminRoutes.post('/workouts', authMiddleware, adminMiddleware, async (c) => {
     // Insert the workout and include exercises in response
     const newWorkout = await prisma.workout.create({
       data: {
-        userId: parsed.data.userId,
+        userId: body.userId,
         date: new Date(parsed.data.date),
         exercises: {
           create: parsed.data.exercises.map((ex) => ({
@@ -203,7 +303,7 @@ adminRoutes.post('/workouts', authMiddleware, adminMiddleware, async (c) => {
         },
       },
       include: {
-        exercises: true, // This ensures exercises appear in the response
+        exercises: true, 
       },
     });
   

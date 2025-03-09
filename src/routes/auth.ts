@@ -25,7 +25,7 @@ authRoutes.post('/signup', async (c) => {
     data: { email, password: hashedPassword },
   });
 
-  return c.json({ message: 'User created successfully!', userId: newUser.id });
+  return c.json({ message: 'User created successfully!' }, 201);
 });
 
 authRoutes.post('/login', async (c) => {

@@ -4,6 +4,10 @@
 "email": "admin@workout.com",
 "password": "admin123"
 
+###
+
+### Run
+
 Búa til .env skrá og setja upp db
 Sækja pakka og keyra:
 
@@ -27,7 +31,7 @@ yarn lint
 ### Notes
 Hægt er að uploada images í exercises með því að nota id af exercise.
 Það er gert með imgix og AWS.
-localhost:3000/admin/exercises/0b226c86-91b7-46e1-9546-e9113186a677/image
+/admin/exercises/<id>/image
 
 Einnig var stórt mállíkan (LLM, „gervigreind“, t.d. ChatGTP) notað til að skrifa part af lausn
 

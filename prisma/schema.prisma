@@ -17,38 +17,50 @@ model User {
   id       String  @id @default(uuid())
   email    String  @unique
   password String
-  role     String  @default("user") // "admin" or "user"
+  role     String  @default("user") 
   workouts Workout[]
+  progressLogs ProgressLog[]
 
   @@map("user")
 }
 
 model Workout {
-  id        String @id @default(uuid())
-  user      User   @relation(fields: [userId], references: [id])
-  userId    String
-  date      DateTime @default(now())
-  exercises WorkoutExercise[]
-   @@map("workout")
+  id           String        @id @default(uuid())
+  user         User          @relation(fields: [userId], references: [id])
+  userId       String
+  date         DateTime      @default(now())
+  exercises    WorkoutExercise[]
+  progressLogs ProgressLog[] // ✅ Add back-reference to ProgressLog
+
+  @@map("workout")
 }
 
 model Exercise {
-  id          String  @id @default(uuid())
-  name        String
-  category    String
-  description String?  // ✅ Optional text field for exercise details
-  imageUrl    String?  // ✅ Optional field to store exercise images
+  id          String    @id @default(uuid())
+  name        String    @unique
+  categoryId  String    @default("default-category-id") @map("category_id") // ✅ Set default
+  category    Category  @relation(fields: [categoryId], references: [id])
+  description String?
+  imageUrl    String?
   workouts    WorkoutExercise[]
+  progressLogs ProgressLog[]
 
   @@map("exercise")
 }
 
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  exercises Exercise[]
+
+  @@map("category")
+}
 
 model WorkoutExercise {
   id         String @id @default(uuid())
   workout    Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   workoutId  String
-  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   exerciseId String
   sets       Int
   reps       Int
@@ -56,3 +68,18 @@ model WorkoutExercise {
   @@map("workoutexercise")
 }
 
+model ProgressLog {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId  String   @map("exercise_id")
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  workoutId   String   @map("workout_id")
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  date        DateTime @default(now())
+  sets        Int
+  reps        Int
+  weight      Float
+
+  @@map("progresslog")
+}
