@@ -39,6 +39,7 @@ Einnig var stórt mállíkan (LLM, „gervigreind“, t.d. ChatGTP) notað til a
 
 ### Hýsing
 Render fyrir web service og neon fyrir postgres
+https://vef2-2025-h1.onrender.com/
 
 ### Hópavinna
 Solo 
