@@ -17,7 +17,7 @@ app.use('*', logger()); // Logs requests
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:3000'], 
+    origin: '*', 
     credentials: true,
     allowHeaders: ['Content-Type', 'Authorization'],
   })
