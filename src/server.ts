@@ -14,7 +14,14 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use('*', logger()); // Logs requests
-app.use('*', cors()); // Enable CORS
+app.use(
+  '*',
+  cors({
+    origin: ['http://localhost:3000'], 
+    credentials: true,
+    allowHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 // Default route
 app.get('/', (c) => {
@@ -84,7 +91,7 @@ if (process.env.NODE_ENV !== 'test') {
   serve(
     {
       fetch: app.fetch,
-      port: 3000,
+      port: 8000,
     },
     (info) => {
       console.info(`Server is running on http://localhost:${info.port}`);
