@@ -154,6 +154,7 @@ adminRoutes.put('/exercises/:id', authMiddleware, adminMiddleware, async (c) => 
       description,
       categoryId: category.id, 
     },
+    include: { category: true },
   });
 
   return c.json(updatedExercise);
@@ -242,12 +243,20 @@ adminRoutes.post('/progress', authMiddleware, adminMiddleware, async (c) => {
 adminRoutes.get('/workouts', authMiddleware, adminMiddleware, async (c) => {
   const page = Number(c.req.query('page') || 1);
   const pageSize = 10;
-  const workouts = await prisma.workout.findMany({
-    include: { exercises: true },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+
+  const [workouts, total] = await Promise.all([
+    prisma.workout.findMany({
+      include: { exercises: true },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.workout.count(),
+  ]);
+
+  return c.json({
+    data: workouts,
+    totalPages: Math.ceil(total / pageSize),
   });
-  return c.json(workouts);
 });
 
 // Create new workout
