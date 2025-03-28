@@ -5,8 +5,24 @@ export const exerciseRoutes = new Hono();
 
 // Get all exercises 
 exerciseRoutes.get('/', async (c) => {
-  const exercises = await prisma.exercise.findMany();
-  return c.json(exercises);
+  const page = Number(c.req.query('page') || 1);
+  const limit = Number(c.req.query('limit') || 12); // Default 12 per page
+
+  const [exercises, total] = await Promise.all([
+    prisma.exercise.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      include: { category: true },
+    }),
+    prisma.exercise.count(),
+  ]);
+
+  return c.json({
+    data: exercises,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  });
 });
 
 // Get a single exercise by ID (Everyone can access)
@@ -14,6 +30,7 @@ exerciseRoutes.get('/:id', async (c) => {
   const id = c.req.param('id');
   const exercise = await prisma.exercise.findUnique({
     where: { id },
+    include: { category: true },
   });
 
   if (!exercise) {

@@ -42,10 +42,6 @@ userRoutes.get('/workouts', authMiddleware, async (c) => {
     orderBy: { date: 'desc' },
   });
 
-  if (!workouts.length) {
-    return c.json({ message: 'No workouts found' }, 404);
-  }
-
   return c.json(workouts);
 });
 

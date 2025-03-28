@@ -27,7 +27,13 @@ workoutRoutes.get('/:id', authMiddleware, async (c) => {
 
   const workout = await prisma.workout.findUnique({
     where: { id: workoutId, userId },
-    include: { exercises: true },
+    include: {
+      exercises: {
+        include: {
+          exercise: true,
+        },
+      },
+    },
   });
 
   if (!workout) {

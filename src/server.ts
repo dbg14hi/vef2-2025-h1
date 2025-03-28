@@ -17,11 +17,15 @@ app.use('*', logger()); // Logs requests
 app.use(
   '*',
   cors({
-    origin: '*', 
+    origin: [
+      'http://localhost:3000',
+      'https://vef2-2025-h2.vercel.app',
+    ],
     credentials: true,
     allowHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
 
 // Default route
 app.get('/', (c) => {

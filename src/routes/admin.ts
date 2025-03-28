@@ -85,6 +85,7 @@ adminRoutes.get('/exercises', authMiddleware, adminMiddleware, async (c) => {
   const exercises = await prisma.exercise.findMany({
     skip: (page - 1) * pageSize,
     take: pageSize,
+    include: { category: true },
   });
   return c.json(exercises);
 });
@@ -191,7 +192,6 @@ adminRoutes.delete('/exercises', authMiddleware, adminMiddleware, async (c) => {
     return c.json({ error: 'Exercise not found or cannot be deleted' }, 400);
   }
 });
-
 
 // Progress routes
 // Get all progress logs 
